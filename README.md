@@ -73,6 +73,3 @@ Run the rails server on console with port 3000:
 ```sh
 rails s -p 3000
 ```
-
-Editing stripe-webhook-app/README.md at main · Haseeb717/stripe-webhook-app
-
