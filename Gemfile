@@ -51,8 +51,12 @@ gem "stripe"
 gem 'interactor'
 gem 'sidekiq'
 
+# for credentials
 gem 'dotenv-rails'
 gem 'rubocop'
+
+# for state management
+gem 'aasm'
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
