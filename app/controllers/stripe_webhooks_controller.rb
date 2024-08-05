@@ -15,7 +15,7 @@ class StripeWebhooksController < ApplicationController
       return
     end
 
-    DispatchStripeEventJob.perform_later(event)
+    DispatchStripeEventJob.perform_later(event.as_json)
     render json: { message: 'Success' }, status: :ok
   end
 
