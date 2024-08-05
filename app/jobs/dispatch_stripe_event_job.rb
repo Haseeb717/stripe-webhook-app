@@ -10,8 +10,9 @@ class DispatchStripeEventJob < ApplicationJob
     result = DispatchStripeEvent.call(event:)
 
     return if result.success?
+
     raise SubscriptionNotFoundError, result.error if result.error == 'Subscription not found'
 
-    raise StandardError, result.error
+    raise StandardError
   end
 end

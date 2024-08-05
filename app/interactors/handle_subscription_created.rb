@@ -8,7 +8,7 @@ class HandleSubscriptionCreated
     subscription = context.event.data.object
     subscription_record = Subscription.find_or_initialize_by(stripe_subscription_id: subscription.id)
     subscription_record.update!(
-      customer_id: subscription.customer,
+      stripe_customer_id: subscription.customer,
       status: 'unpaid'
     )
     context.subscription_record = subscription_record
