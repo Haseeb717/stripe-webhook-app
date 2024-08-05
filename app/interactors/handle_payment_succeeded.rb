@@ -5,13 +5,23 @@ class HandlePaymentSucceeded
   include Interactor
 
   def call
-    invoice = context.event.data.object
-    subscription_record = Subscription.find_by(stripe_id: invoice.subscription)
-    return context.fail!(error: 'Subscription not found') unless subscription_record
+    invoice = context.event['data']['object']
+    subscription_record = Subscription.find_by(stripe_subscription_id: invoice['subscription'])
 
-    subscription_record.update!(status: 'paid')
-    context.subscription_record = subscription_record
-  rescue StandardError => e
-    context.fail!(error: e.message)
+    if subscription_record
+      mark_pay(subscription_record)
+    else
+      context.fail!(error: 'Subscription not found')
+    end
+  end
+
+  private
+
+  def mark_pay(subscription_record)
+    if subscription_record.may_pay?
+      subscription_record.pay!
+    else
+      context.fail!(error: 'Subscription cannot be marked as paid')
+    end
   end
 end

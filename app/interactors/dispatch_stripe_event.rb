@@ -7,7 +7,7 @@ class DispatchStripeEvent
   LOCK_EXPIRY_TIME = 10.minutes
 
   before do
-    @event_id = context.event.id
+    @event_id = context.event['id']
     @lock_key = "stripe_event:#{@event_id}"
 
     context.fail!(error: 'Event type not supported') unless handler_for(context.event)
@@ -17,7 +17,6 @@ class DispatchStripeEvent
   def call
     handler = handler_for(context.event)
     result = handler.call(event: context.event)
-
     context.fail!(error: result.error) unless result.success?
   ensure
     release_lock(@lock_key)
@@ -26,15 +25,15 @@ class DispatchStripeEvent
   private
 
   def acquire_lock(key)
-    Redis.current.set(key, true, nx: true, ex: LOCK_EXPIRY_TIME)
+    RedisClient.instance.set(key, true, nx: true, ex: LOCK_EXPIRY_TIME)
   end
 
   def release_lock(key)
-    Redis.current.del(key)
+    RedisClient.instance.del(key)
   end
 
   def handler_for(event)
-    case event.type
+    case event['type']
     when 'customer.subscription.created'
       HandleSubscriptionCreated
     when 'invoice.payment_succeeded'
