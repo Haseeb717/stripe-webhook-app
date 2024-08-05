@@ -5,8 +5,8 @@ class HandlePaymentSucceeded
   include Interactor
 
   def call
-    invoice = context.event.data.object
-    subscription_record = Subscription.find_by(stripe_subscription_id: invoice.subscription)
+    invoice = context.event['data']['object']
+    subscription_record = Subscription.find_by(stripe_subscription_id: invoice['subscription'])
 
     if subscription_record
       mark_pay(subscription_record)
