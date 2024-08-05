@@ -13,6 +13,7 @@ This Rails application is designed to handle subscription lifecycle events from 
 - PostgreSQL: Verify that PostgreSQL is installed and operational.
 - Stripe Account: Create a free [Stripe account](https://dashboard.stripe.com/register) if you don't already have one.
 - Stripe CLI: Install the [Stripe CLI](https://stripe.com/docs/stripe-cli) for local webhook testing.
+- Redis: Install [Redis](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/) for background job
 
 ## Setup Instructions
 ### 1. Clone the Repository
@@ -32,7 +33,13 @@ rails db:create
 rails db:migrate
 ```
 
-### 4. Stripe CLI and webhook listen
+### 4. Run Sidekiq
+```sh
+bundle exec sidekiq
+```
+
+
+### 5. Stripe CLI and webhook listen
 Login to stripe-cli
 
 ```sh
@@ -46,11 +53,11 @@ stripe listen --events customer.subscription.created,invoice.payment_succeeded,c
 
 You can add other events also in above command as per requirement.
 
-### 5. Configure Environment Variables
+### 6. Configure Environment Variables
 Copy the example environment variables file and edit it with your Stripe credentials:
 
 ```sh
-cp .env.example .env
+cp .env_example .env
 ```
 Edit .env with your Stripe keys:
 
@@ -58,7 +65,7 @@ Edit .env with your Stripe keys:
 
 **STRIPE_WEBHOOK_KEY**: Obtain this by running ```sh stripe listen --forward-to localhost:3000/stripe_webhook```. For production or staging we can get this key from [Stripe dashboard](https://dashboard.stripe.com/webhooks) as per endpoint registered.
 
-### 6. Run Tests
+### 7. Run Tests
 
 Execute the test suite:
 
@@ -66,10 +73,30 @@ Execute the test suite:
 bundle exec rspec
 ```
 
-### 7. Rails Server
+### 8. Rails Server
 
 Run the rails server on console with port 3000:
 
 ```sh
 rails s -p 3000
 ```
+
+
+## Flow
+
+- Trigger Stripe subscription creation event using it:
+```sh
+stripe trigger customer.subscription.created --override subscription:payment_behavior=default_incomplete --add customer:email=valid-user@mail.com
+```
+
+- Mark then invoice paid of that subscription from stripe dashboard or trigger Invoice Payment succeed event manually overriding with that subscription id
+```sh
+stripe trigger invoice.payment_succeeded
+```
+
+- Cancel the subscription from UI or trigger Subscription delete event
+```sh
+stripe trigger customer.subscription.deleted
+```
+
+
