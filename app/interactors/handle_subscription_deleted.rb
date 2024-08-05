@@ -5,8 +5,8 @@ class HandleSubscriptionDeleted
   include Interactor
 
   def call
-    subscription = context.event.data.object
-    subscription_record = Subscription.find_by(stripe_subscription_id: subscription.id)
+    subscription = context.event['data']['object']
+    subscription_record = Subscription.find_by(stripe_subscription_id: subscription['id'])
 
     if subscription_record
       cancel_subscription(subscription_record)
