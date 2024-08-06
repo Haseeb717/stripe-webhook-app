@@ -4,7 +4,7 @@
 class DispatchStripeEventJob < ApplicationJob
   queue_as :default
 
-  retry_on SubscriptionNotFoundError, wait: :exponentially_longer, attempts: 5
+  retry_on SubscriptionNotFoundError, wait: :exponentially_longer, attempts: 2
 
   def perform(event)
     result = DispatchStripeEvent.call(event:)
@@ -13,6 +13,6 @@ class DispatchStripeEventJob < ApplicationJob
 
     raise SubscriptionNotFoundError, result.error if result.error == 'Subscription not found'
 
-    raise StandardError
+    raise StandardError, result.error
   end
 end
