@@ -1,15 +1,11 @@
-# This workflow uses actions that are not certified by GitHub.  They are
-# provided by a third-party and are governed by separate terms of service,
-# privacy policy, and support documentation.
-#
-# This workflow will install a prebuilt Ruby version, install dependencies, and
-# run tests and linters.
-name: "Ruby on Rails CI"
+name: "Ruby on Rails CI/CD"
+
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ]  # Only triggers jobs on push to main
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main" ]  # Only runs tests and lints on pull requests, no deploy
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -28,15 +24,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      # Add or replace dependency steps here
+
       - name: Install Ruby and gems
-        uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
+        uses: ruby/setup-ruby@v1.179.1
         with:
           bundler-cache: true
-      # Add or replace database setup steps here
+
       - name: Set up database schema
         run: bin/rails db:schema:load
-      # Add or replace test runners here
+
       - name: Run tests
         run: bin/rake
 
@@ -45,16 +41,49 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Install Ruby and gems
-        uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
+        uses: ruby/setup-ruby@v1.179.1
         with:
           bundler-cache: true
+
       - name: Generate binstubs
         run: bundle binstubs bundler-audit brakeman rubocop
-      # Add or replace any other lints here
+
       - name: Security audit dependencies
         run: bin/bundler-audit --update
+
       - name: Security audit application code
         run: bin/brakeman -q -w2
+
       - name: Lint Ruby files
         run: bin/rubocop --parallel
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'  # Only deploy on push to main branch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Ruby and gems
+        uses: ruby/setup-ruby@v1.179.1
+        with:
+          bundler-cache: true
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }} # Add your EC2 SSH private key in GitHub Secrets
+
+      - name: Deploy to AWS EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ec2-user@your-ec2-ip-address << 'EOF'
+          cd /path/to/your/app
+          git pull origin main
+          bundle install --deployment --without development test
+          bin/rails db:migrate
+          bin/rails assets:precompile
+          sudo systemctl restart your-app-name
+          EOF
